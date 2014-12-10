@@ -4,12 +4,15 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+import org.apache.commons.lang3.StringUtils;
+
 public class Foo {
 	
 	private List<Bar> _barList = new ArrayList<Bar>();
 	
 	public void addBar(Bar bar){
 		_barList.add(bar);
+		FooBar.create(this, bar);
 	}
 	
 	public Bar getBar(){
@@ -33,7 +36,11 @@ public class Foo {
 	}
 	
 	public String bar(String str){
-		return str;
+		return privateBar(str);
+	}
+	
+	private String privateBar(String str){
+		return StringUtils.reverse(str);
 	}
 	
 	public void addBars(List<Bar> bars){

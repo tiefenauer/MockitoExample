@@ -4,17 +4,18 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.argThat;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.atMost;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.only;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -22,11 +23,11 @@ import info.tiefenauer.mockitoExample.Bar;
 import info.tiefenauer.mockitoExample.Foo;
 import info.tiefenauer.mockitoExample.FooBar;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
-import org.hamcrest.BaseMatcher;
-import org.hamcrest.Description;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -36,6 +37,7 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.ArgumentMatcher;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.exceptions.misusing.InvalidUseOfMatchersException;
@@ -119,22 +121,18 @@ public class MockitoTest {
 		when(foo.getBar(anyString())).thenReturn(bar1);
 		when(foo.getBar(any(String.class))).thenReturn(bar1);
 		when(foo.getBar(eq("bar"))).thenReturn(bar2);
-		when(foo.getBar(argThat(new BaseMatcher<String>() {
+		ArgumentMatcher<String> isStringOfLength2 = new ArgumentMatcher<String>() {
 			@Override
-			public void describeTo(Description description) {
-				description.appendText("Argument is valid when it is '42'");
+			public boolean matches(Object argument) {
+				return argument != null && argument instanceof String && ((String)argument).length() == 2;
 			}
-			@Override
-			public boolean matches(Object item) {
-				return item != null && item.equals("42");
-			}
-
-		}))).thenReturn(bar3);
+		};
+		when(foo.getBar(argThat(isStringOfLength2))).thenReturn(bar3);
 		
 		assertEquals("check stub with any Bar", bar1, foo.getBar("fooBar"));
 		assertEquals("check stub with any other Bar", bar1, foo.getBar("BarFoo"));
 		assertEquals("check stub with mock", bar2, foo.getBar("bar"));
-		assertEquals("check stub with a valid bar", bar3, foo.getBar("42"));
+		assertEquals("check stub with a valid bar", bar3, foo.getBar("fb"));
 	}
 	
 	
@@ -163,7 +161,7 @@ public class MockitoTest {
 	 */
 	@Test
 	public void stubMultipleMatchersCorrect(){
-		when(foo.getBar(anyString(), anyInt())).thenReturn(bar);
+		when(foo.getBar(anyString(), eq(42))).thenReturn(bar);
 		assertEquals("check stub with multiple matchers", bar, foo.getBar("any string", 42));		
 	}
 	
@@ -253,7 +251,7 @@ public class MockitoTest {
 	}
 	
 	/**
-	 * Arguments can be captured, if
+	 * Arguments can be captured, if further assertions must be made
 	 */
 	@Test
 	public void verifyMethodCallWithMultipleArguments(){
@@ -269,6 +267,26 @@ public class MockitoTest {
 		verify(barMock2).setFooBar(captor.capture());
 		assertEquals("FooBar should contain correct Foo", foo, captor.getValue().getFoo());
 		assertEquals("FooBar should contain correct Bar", barMock2, captor.getValue().getBar());
+	}
+	
+	@Test
+	public void spyOnRealObject(){
+		List<Bar> spyOnList = spy(new ArrayList<Bar>());
+		// won't work
+		//when(spyOnList.get(0)).thenReturn(bar);
+		
+		doReturn(bar).when(spyOnList).get(0);
+		doReturn(bar).when(spyOnList).get(1);
+		doReturn(null).when(spyOnList).get(2);
+		
+		// verify stubbed methods
+		assertEquals("should return the mocked value", bar, spyOnList.get(0));
+		assertEquals("should return the mocked value", bar, spyOnList.get(1));
+		assertNull("should return the mocked value (null)", spyOnList.get(2));
+		
+		// verify unstubbed methods
+		spyOnList.add(bar);
+		assertEquals("un-stubbed methods should still work", 1, spyOnList.size());
 	}
 	
 }

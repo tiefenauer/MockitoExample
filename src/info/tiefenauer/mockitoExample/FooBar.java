@@ -1,5 +1,6 @@
 package info.tiefenauer.mockitoExample;
 
+
 public class FooBar {
 
 	private Foo _foo;
@@ -15,6 +16,9 @@ public class FooBar {
 	
 	public static FooBar create(){
 		return new FooBar();
+	}
+	public static FooBar create(Foo foo, Bar bar){
+		return new FooBar(foo, bar);
 	}
 	
 	public Foo getFoo() {

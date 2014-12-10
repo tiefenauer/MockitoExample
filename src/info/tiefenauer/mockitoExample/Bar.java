@@ -8,7 +8,6 @@ public class Bar {
 	private FooBar _fooBar = null;
 	
 	public Bar(){
-		
 	}
 	public Bar(String name){
 		_name = name;
